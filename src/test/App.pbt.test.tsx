@@ -23,7 +23,7 @@ import { render, within, fireEvent } from '@testing-library/react';
 import * as fc from 'fast-check';
 import App from '../App';
 
-const NUM_RUNS = 300;
+const NUM_RUNS = 500;
 
 // ── Arbitraries ───────────────────────────────────────────────────────────────
 
@@ -198,7 +198,7 @@ describe('App - sort interaction properties', () => {
 // ── New ticket creation properties ────────────────────────────────────────────
 
 describe('App - ticket creation properties', () => {
-  it('New Ticket ボタンでフォームが表示される', () => {
+  it('New Ticket ボタンでフォームが表示される', { timeout: 30000 }, () => {
     fc.assert(
       fc.property(fc.constant(null), () => {
         const { unmount, container } = render(<App />);
@@ -215,7 +215,7 @@ describe('App - ticket creation properties', () => {
     );
   });
 
-  it('フォームのCancelでフォームが非表示になる', () => {
+  it('フォームのCancelでフォームが非表示になる', { timeout: 30000 }, () => {
     fc.assert(
       fc.property(fc.constant(null), () => {
         const { unmount, container } = render(<App />);
