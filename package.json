@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "packageManager": "pnpm@10.32.1",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
@@ -10,7 +11,9 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "test:ci": "CI=true vitest run",
+    "test:ci:junit": "CI=true vitest run --reporter=verbose --reporter=junit --outputFile.junit=test-results/junit.xml"
   },
   "dependencies": {
     "react": "^19.2.0",
@@ -18,7 +21,6 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
-    "@rollup/rollup-linux-arm64-gnu": "^4.59.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",

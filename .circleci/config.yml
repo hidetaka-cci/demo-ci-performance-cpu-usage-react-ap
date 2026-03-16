@@ -4,13 +4,18 @@ version: 2.1
 # CI Performance Demo: Property-Based Testing with fast-check
 #
 # このデモでは resource_class と parallelism を変えることで
-# PBT (numRuns=1000) のテスト実行速度の違いを体感できます。
+# PBT のテスト実行速度の違いを体感できます。
 #
 # テスト負荷の調整:
 #   src/test/*.pbt.test.ts(x) の NUM_RUNS を変更
 #   - 標準:   NUM_RUNS = 100
 #   - 高負荷: NUM_RUNS = 1000 (デフォルト)
 #   - 超高負荷: NUM_RUNS = 10000
+#
+# Test Insights の確認:
+#   CircleCI UI → Project → Tests タブ
+#   junit.xml が store_test_results で取り込まれ、
+#   テストごとの実行時間・失敗傾向が可視化されます。
 # ============================================================
 
 orbs:
@@ -40,10 +45,40 @@ executors:
 commands:
   install-deps:
     steps:
-      - node/install-packages:
-          pkg-manager: npm
-          cache-path: ~/project/node_modules
-          override-ci-command: npm ci
+      - run:
+          name: Enable Corepack & install pnpm
+          command: |
+            corepack enable
+            corepack prepare pnpm@10.32.1 --activate
+      - restore_cache:
+          keys:
+            - pnpm-v1-{{ checksum "pnpm-lock.yaml" }}
+            - pnpm-v1-
+      - run:
+          name: Install dependencies (pnpm ci)
+          command: pnpm install --frozen-lockfile
+      - save_cache:
+          key: pnpm-v1-{{ checksum "pnpm-lock.yaml" }}
+          paths:
+            - ~/.local/share/pnpm/store
+            - node_modules
+
+  run-tests-and-store:
+    parameters:
+      label:
+        type: string
+    steps:
+      - run:
+          name: Run PBT << parameters.label >>
+          # CI=true により vite.config.ts の junit レポーターが有効になる
+          # test-results/junit.xml に JUnit XML が出力される
+          command: pnpm run test:ci
+      - store_test_results:
+          # CircleCI Test Insights が junit.xml を自動検出する
+          path: test-results
+      - store_artifacts:
+          path: test-results
+          destination: test-results
 
 # ── Jobs ─────────────────────────────────────────────────────
 jobs:
@@ -54,11 +89,8 @@ jobs:
     steps:
       - checkout
       - install-deps
-      - run:
-          name: Run PBT (small / parallelism=1)
-          command: npm test -- --reporter=verbose
-      - store_test_results:
-          path: test-results
+      - run-tests-and-store:
+          label: "(small / parallelism=1)"
 
   # ── [2] Medium resource class, no parallelism ────────────────
   test-medium:
@@ -67,11 +99,8 @@ jobs:
     steps:
       - checkout
       - install-deps
-      - run:
-          name: Run PBT (medium / parallelism=1)
-          command: npm test -- --reporter=verbose
-      - store_test_results:
-          path: test-results
+      - run-tests-and-store:
+          label: "(medium / parallelism=1)"
 
   # ── [3] Large resource class, no parallelism ─────────────────
   test-large:
@@ -80,14 +109,12 @@ jobs:
     steps:
       - checkout
       - install-deps
-      - run:
-          name: Run PBT (large / parallelism=1)
-          command: npm test -- --reporter=verbose
-      - store_test_results:
-          path: test-results
+      - run-tests-and-store:
+          label: "(large / parallelism=1)"
 
   # ── [4] Medium resource class, parallelism=4 ─────────────────
   # CircleCI の test splitting を使って並列実行
+  # timings による分割で各ノードの実行時間を均等化
   test-medium-parallel:
     executor: node-medium
     parallelism: 4
@@ -97,12 +124,20 @@ jobs:
       - run:
           name: Run PBT (medium / parallelism=4) with test splitting
           command: |
-            # テストファイルを並列分割して実行
+            mkdir -p test-results
+            # タイミングデータで分割 (初回は名前で均等分割)
             TESTFILES=$(circleci tests glob "src/test/**/*.test.{ts,tsx}" | \
               circleci tests split --split-by=timings)
-            npx vitest run $TESTFILES --reporter=verbose
+            # ノード番号をファイル名に含めて各ノードの結果を区別
+            CI=true pnpm exec vitest run $TESTFILES \
+              --reporter=verbose \
+              --reporter=junit \
+              --outputFile.junit="test-results/junit-${CIRCLE_NODE_INDEX}.xml"
       - store_test_results:
           path: test-results
+      - store_artifacts:
+          path: test-results
+          destination: test-results
 
 # ── Workflows ────────────────────────────────────────────────
 workflows:
@@ -112,7 +147,7 @@ workflows:
       - test-medium
 
   # [B] パフォーマンス比較デモ: 全バリエーションを並列実行
-  #     手動でトリガーするか、タグ push 時に起動
+  #     performance-demo ブランチへの push で起動
   performance-comparison:
     when:
       equal: [performance-demo, << pipeline.git.branch >>]
