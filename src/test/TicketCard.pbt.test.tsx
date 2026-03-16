@@ -5,10 +5,12 @@
  * render が jsdom 上で走るため、numRuns に比例して CPU 負荷が増加します。
  *
  * numRuns を変更して CircleCI のリソースクラス効果を体感してください。
+ *
+ * ※ try/finally + within(container) で DOM リークを防止します。
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, within } from '@testing-library/react';
 import * as fc from 'fast-check';
 import { TicketCard } from '../components/TicketCard';
 import type { Ticket, Priority, Status } from '../types/ticket';
@@ -45,17 +47,17 @@ describe('TicketCard - rendering properties', () => {
   it('任意のチケットに対してタイトルが必ずレンダリングされる', () => {
     fc.assert(
       fc.property(ticketArb, (ticket) => {
-        const { unmount } = render(
-          <TicketCard
-            ticket={ticket}
-            onStatusChange={vi.fn()}
-            onDelete={vi.fn()}
-          />
+        const { unmount, container } = render(
+          <TicketCard ticket={ticket} onStatusChange={vi.fn()} onDelete={vi.fn()} />
         );
-        const titleEl = screen.getByTestId('ticket-title');
-        expect(titleEl).toBeInTheDocument();
-        expect(titleEl.textContent).toBe(ticket.title);
-        unmount();
+        try {
+          const q = within(container);
+          const titleEl = q.getByTestId('ticket-title');
+          expect(titleEl).toBeInTheDocument();
+          expect(titleEl.textContent).toBe(ticket.title);
+        } finally {
+          unmount();
+        }
       }),
       { numRuns: NUM_RUNS }
     );
@@ -64,17 +66,16 @@ describe('TicketCard - rendering properties', () => {
   it('任意のチケットに対して説明が必ずレンダリングされる', () => {
     fc.assert(
       fc.property(ticketArb, (ticket) => {
-        const { unmount } = render(
-          <TicketCard
-            ticket={ticket}
-            onStatusChange={vi.fn()}
-            onDelete={vi.fn()}
-          />
+        const { unmount, container } = render(
+          <TicketCard ticket={ticket} onStatusChange={vi.fn()} onDelete={vi.fn()} />
         );
-        const descEl = screen.getByTestId('ticket-description');
-        expect(descEl).toBeInTheDocument();
-        expect(descEl.textContent).toBe(ticket.description);
-        unmount();
+        try {
+          const descEl = within(container).getByTestId('ticket-description');
+          expect(descEl).toBeInTheDocument();
+          expect(descEl.textContent).toBe(ticket.description);
+        } finally {
+          unmount();
+        }
       }),
       { numRuns: NUM_RUNS }
     );
@@ -83,17 +84,16 @@ describe('TicketCard - rendering properties', () => {
   it('priority バッジは常に表示される', () => {
     fc.assert(
       fc.property(ticketArb, (ticket) => {
-        const { unmount } = render(
-          <TicketCard
-            ticket={ticket}
-            onStatusChange={vi.fn()}
-            onDelete={vi.fn()}
-          />
+        const { unmount, container } = render(
+          <TicketCard ticket={ticket} onStatusChange={vi.fn()} onDelete={vi.fn()} />
         );
-        const badge = screen.getByTestId('priority-badge');
-        expect(badge).toBeInTheDocument();
-        expect(badge.textContent).toBeTruthy();
-        unmount();
+        try {
+          const badge = within(container).getByTestId('priority-badge');
+          expect(badge).toBeInTheDocument();
+          expect(badge.textContent).toBeTruthy();
+        } finally {
+          unmount();
+        }
       }),
       { numRuns: NUM_RUNS }
     );
@@ -102,17 +102,16 @@ describe('TicketCard - rendering properties', () => {
   it('status バッジは常に表示される', () => {
     fc.assert(
       fc.property(ticketArb, (ticket) => {
-        const { unmount } = render(
-          <TicketCard
-            ticket={ticket}
-            onStatusChange={vi.fn()}
-            onDelete={vi.fn()}
-          />
+        const { unmount, container } = render(
+          <TicketCard ticket={ticket} onStatusChange={vi.fn()} onDelete={vi.fn()} />
         );
-        const badge = screen.getByTestId('status-badge');
-        expect(badge).toBeInTheDocument();
-        expect(badge.textContent).toBeTruthy();
-        unmount();
+        try {
+          const badge = within(container).getByTestId('status-badge');
+          expect(badge).toBeInTheDocument();
+          expect(badge.textContent).toBeTruthy();
+        } finally {
+          unmount();
+        }
       }),
       { numRuns: NUM_RUNS }
     );
@@ -122,35 +121,38 @@ describe('TicketCard - rendering properties', () => {
     const ticketWithAssignee = ticketArb.filter(t => t.assignee !== undefined);
     fc.assert(
       fc.property(ticketWithAssignee, (ticket) => {
-        const { unmount } = render(
-          <TicketCard
-            ticket={ticket}
-            onStatusChange={vi.fn()}
-            onDelete={vi.fn()}
-          />
+        const { unmount, container } = render(
+          <TicketCard ticket={ticket} onStatusChange={vi.fn()} onDelete={vi.fn()} />
         );
-        const assigneeEl = screen.getByTestId('ticket-assignee');
-        expect(assigneeEl).toBeInTheDocument();
-        expect(assigneeEl.textContent).toBe(ticket.assignee);
-        unmount();
+        try {
+          const assigneeEl = within(container).getByTestId('ticket-assignee');
+          expect(assigneeEl).toBeInTheDocument();
+          expect(assigneeEl.textContent).toBe(ticket.assignee);
+        } finally {
+          unmount();
+        }
       }),
       { numRuns: NUM_RUNS }
     );
   });
 
   it('タグの数だけタグ要素がレンダリングされる', () => {
+    // 重複タグを除外してユニークなタグだけ使う
+    const uniqueTagsTicketArb = ticketArb.map(t => ({
+      ...t,
+      tags: [...new Set(t.tags)],
+    }));
     fc.assert(
-      fc.property(ticketArb, (ticket) => {
-        const { unmount } = render(
-          <TicketCard
-            ticket={ticket}
-            onStatusChange={vi.fn()}
-            onDelete={vi.fn()}
-          />
+      fc.property(uniqueTagsTicketArb, (ticket) => {
+        const { unmount, container } = render(
+          <TicketCard ticket={ticket} onStatusChange={vi.fn()} onDelete={vi.fn()} />
         );
-        const tagEls = screen.queryAllByTestId('ticket-tag');
-        expect(tagEls).toHaveLength(ticket.tags.length);
-        unmount();
+        try {
+          const tagEls = within(container).queryAllByTestId('ticket-tag');
+          expect(tagEls).toHaveLength(ticket.tags.length);
+        } finally {
+          unmount();
+        }
       }),
       { numRuns: NUM_RUNS }
     );
@@ -159,16 +161,14 @@ describe('TicketCard - rendering properties', () => {
   it('Delete ボタンは常に表示される', () => {
     fc.assert(
       fc.property(ticketArb, (ticket) => {
-        const { unmount } = render(
-          <TicketCard
-            ticket={ticket}
-            onStatusChange={vi.fn()}
-            onDelete={vi.fn()}
-          />
+        const { unmount, container } = render(
+          <TicketCard ticket={ticket} onStatusChange={vi.fn()} onDelete={vi.fn()} />
         );
-        const deleteBtn = screen.getByTestId('delete-button');
-        expect(deleteBtn).toBeInTheDocument();
-        unmount();
+        try {
+          expect(within(container).getByTestId('delete-button')).toBeInTheDocument();
+        } finally {
+          unmount();
+        }
       }),
       { numRuns: NUM_RUNS }
     );
@@ -177,16 +177,14 @@ describe('TicketCard - rendering properties', () => {
   it('ステータス進行ボタンは常に表示される', () => {
     fc.assert(
       fc.property(ticketArb, (ticket) => {
-        const { unmount } = render(
-          <TicketCard
-            ticket={ticket}
-            onStatusChange={vi.fn()}
-            onDelete={vi.fn()}
-          />
+        const { unmount, container } = render(
+          <TicketCard ticket={ticket} onStatusChange={vi.fn()} onDelete={vi.fn()} />
         );
-        const advanceBtn = screen.getByTestId('advance-status-button');
-        expect(advanceBtn).toBeInTheDocument();
-        unmount();
+        try {
+          expect(within(container).getByTestId('advance-status-button')).toBeInTheDocument();
+        } finally {
+          unmount();
+        }
       }),
       { numRuns: NUM_RUNS }
     );

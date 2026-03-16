@@ -1,6 +1,7 @@
 import type { Ticket, Priority, Status, TicketFormData } from '../types/ticket';
 
-let idCounter = 1;
+// 10000以上から開始することで、App.tsxのハードコードID (TICKET-0001〜0003) との衝突を回避
+let idCounter = 10000;
 
 export function createTicket(data: TicketFormData): Ticket {
   const now = new Date();

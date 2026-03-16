@@ -30,7 +30,7 @@ export function TicketForm({ onSubmit, onCancel }: TicketFormProps) {
       return;
     }
     const tags = tagsInput.split(',').map(t => t.trim()).filter(Boolean);
-    onSubmit({ title, description, priority, assignee: assignee || undefined, tags });
+    onSubmit({ title: title.trim(), description: description.trim(), priority, assignee: assignee?.trim() || undefined, tags });
   };
 
   const inputStyle: React.CSSProperties = {
