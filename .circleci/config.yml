@@ -1,0 +1,123 @@
+version: 2.1
+
+# ============================================================
+# CI Performance Demo: Property-Based Testing with fast-check
+#
+# このデモでは resource_class と parallelism を変えることで
+# PBT (numRuns=1000) のテスト実行速度の違いを体感できます。
+#
+# テスト負荷の調整:
+#   src/test/*.pbt.test.ts(x) の NUM_RUNS を変更
+#   - 標準:   NUM_RUNS = 100
+#   - 高負荷: NUM_RUNS = 1000 (デフォルト)
+#   - 超高負荷: NUM_RUNS = 10000
+# ============================================================
+
+orbs:
+  node: circleci/node@7
+
+# ── Executors ────────────────────────────────────────────────
+executors:
+  # Small: 1 vCPU / 2GB RAM  → PBT が重い場合に明確に遅い
+  node-small:
+    docker:
+      - image: cimg/node:22.14
+    resource_class: small
+
+  # Medium: 2 vCPU / 4GB RAM  → デフォルト
+  node-medium:
+    docker:
+      - image: cimg/node:22.14
+    resource_class: medium
+
+  # Large: 4 vCPU / 8GB RAM  → parallelism との組み合わせで効果大
+  node-large:
+    docker:
+      - image: cimg/node:22.14
+    resource_class: large
+
+# ── Commands ─────────────────────────────────────────────────
+commands:
+  install-deps:
+    steps:
+      - node/install-packages:
+          pkg-manager: npm
+          cache-path: ~/project/node_modules
+          override-ci-command: npm ci
+
+# ── Jobs ─────────────────────────────────────────────────────
+jobs:
+  # ── [1] Small resource class, no parallelism ─────────────────
+  test-small:
+    executor: node-small
+    parallelism: 1
+    steps:
+      - checkout
+      - install-deps
+      - run:
+          name: Run PBT (small / parallelism=1)
+          command: npm test -- --reporter=verbose
+      - store_test_results:
+          path: test-results
+
+  # ── [2] Medium resource class, no parallelism ────────────────
+  test-medium:
+    executor: node-medium
+    parallelism: 1
+    steps:
+      - checkout
+      - install-deps
+      - run:
+          name: Run PBT (medium / parallelism=1)
+          command: npm test -- --reporter=verbose
+      - store_test_results:
+          path: test-results
+
+  # ── [3] Large resource class, no parallelism ─────────────────
+  test-large:
+    executor: node-large
+    parallelism: 1
+    steps:
+      - checkout
+      - install-deps
+      - run:
+          name: Run PBT (large / parallelism=1)
+          command: npm test -- --reporter=verbose
+      - store_test_results:
+          path: test-results
+
+  # ── [4] Medium resource class, parallelism=4 ─────────────────
+  # CircleCI の test splitting を使って並列実行
+  test-medium-parallel:
+    executor: node-medium
+    parallelism: 4
+    steps:
+      - checkout
+      - install-deps
+      - run:
+          name: Run PBT (medium / parallelism=4) with test splitting
+          command: |
+            # テストファイルを並列分割して実行
+            TESTFILES=$(circleci tests glob "src/test/**/*.test.{ts,tsx}" | \
+              circleci tests split --split-by=timings)
+            npx vitest run $TESTFILES --reporter=verbose
+      - store_test_results:
+          path: test-results
+
+# ── Workflows ────────────────────────────────────────────────
+workflows:
+  # [A] デフォルト: Medium のみ実行 (通常の CI)
+  default:
+    jobs:
+      - test-medium
+
+  # [B] パフォーマンス比較デモ: 全バリエーションを並列実行
+  #     手動でトリガーするか、タグ push 時に起動
+  performance-comparison:
+    when:
+      equal: [performance-demo, << pipeline.git.branch >>]
+    jobs:
+      - test-small
+      - test-medium
+      - test-large
+      - test-medium-parallel
