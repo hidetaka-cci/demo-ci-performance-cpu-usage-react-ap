@@ -133,7 +133,7 @@ describe('App - filter interaction properties', () => {
     );
   });
 
-  it('フィルタをリセット(空)すると全チケットが復元される', { timeout: 30000 }, () => {
+  it('フィルタをリセット(空)すると全チケットが復元される', () => {
     fc.assert(
       fc.property(statusFilterArb, priorityFilterArb, (status, priority) => {
         const { unmount, container } = render(<App />);
@@ -198,7 +198,7 @@ describe('App - sort interaction properties', () => {
 // ── New ticket creation properties ────────────────────────────────────────────
 
 describe('App - ticket creation properties', () => {
-  it('New Ticket ボタンでフォームが表示される', { timeout: 30000 }, () => {
+  it('New Ticket ボタンでフォームが表示される', () => {
     fc.assert(
       fc.property(fc.constant(null), () => {
         const { unmount, container } = render(<App />);
@@ -215,7 +215,7 @@ describe('App - ticket creation properties', () => {
     );
   });
 
-  it('フォームのCancelでフォームが非表示になる', { timeout: 30000 }, () => {
+  it('フォームのCancelでフォームが非表示になる', () => {
     fc.assert(
       fc.property(fc.constant(null), () => {
         const { unmount, container } = render(<App />);
@@ -233,7 +233,7 @@ describe('App - ticket creation properties', () => {
     );
   });
 
-  it('有効なフォーム送信後: チケット件数が1増える', { timeout: 30000 }, () => {
+  it('有効なフォーム送信後: チケット件数が1増える', () => {
     fc.assert(
       fc.property(
         fc.string({ minLength: 1, maxLength: 50 }).filter(s => s.trim().length > 0),
