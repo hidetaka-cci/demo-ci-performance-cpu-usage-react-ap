@@ -20,3 +20,16 @@ export interface TicketFormData {
   assignee?: string;
   tags: string[];
 }
+
+export interface Comment {
+  id: string;
+  ticketId: string;
+  author: string;
+  body: string;
+  createdAt: Date;
+}
+
+export interface CommentFormData {
+  author: string;
+  body: string;
+}

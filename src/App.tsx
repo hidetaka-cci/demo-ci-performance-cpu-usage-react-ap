@@ -1,10 +1,13 @@
 import { useState, useMemo } from 'react';
-import type { Ticket, Status, Priority } from './types/ticket';
+import type { Ticket, Status, Comment, CommentFormData } from './types/ticket';
 import { createTicket, updateTicketStatus, filterTickets, sortTickets, getTicketStats } from './utils/ticketUtils';
+import { createComment, addComment, getCommentsByTicket } from './utils/commentUtils';
 import { TicketCard } from './components/TicketCard';
 import { TicketForm } from './components/TicketForm';
 import { TicketStats } from './components/TicketStats';
-import type { TicketFormData } from './types/ticket';
+import { FilterPanel } from './components/FilterPanel';
+import { TicketDetail } from './components/TicketDetail';
+import type { TicketFormData, Priority } from './types/ticket';
 
 const INITIAL_TICKETS: Ticket[] = [
   {
@@ -43,11 +46,13 @@ const INITIAL_TICKETS: Ticket[] = [
 
 export default function App() {
   const [tickets, setTickets] = useState<Ticket[]>(INITIAL_TICKETS);
+  const [comments, setComments] = useState<Comment[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [filterStatus, setFilterStatus] = useState<Status | ''>('');
   const [filterPriority, setFilterPriority] = useState<Priority | ''>('');
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<'createdAt' | 'priority' | 'status'>('createdAt');
+  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
 
   const handleCreate = (data: TicketFormData) => {
     const ticket = createTicket(data);
@@ -61,6 +66,13 @@ export default function App() {
 
   const handleDelete = (id: string) => {
     setTickets(prev => prev.filter(t => t.id !== id));
+    if (selectedTicketId === id) setSelectedTicketId(null);
+  };
+
+  const handleAddComment = (data: CommentFormData) => {
+    if (!selectedTicketId) return;
+    const comment = createComment(selectedTicketId, data);
+    setComments(prev => addComment(prev, comment));
   };
 
   const displayedTickets = useMemo(() => {
@@ -74,13 +86,13 @@ export default function App() {
 
   const stats = useMemo(() => getTicketStats(tickets), [tickets]);
 
-  const selectStyle: React.CSSProperties = {
-    padding: '6px 10px',
-    border: '1px solid #d1d5db',
-    borderRadius: '6px',
-    fontSize: '13px',
-    background: '#fff',
-  };
+  const selectedTicket = selectedTicketId
+    ? tickets.find(t => t.id === selectedTicketId) ?? null
+    : null;
+
+  const selectedComments = selectedTicketId
+    ? getCommentsByTicket(comments, selectedTicketId)
+    : [];
 
   return (
     <div style={{ minHeight: '100vh', background: '#f9fafb', fontFamily: 'system-ui, sans-serif' }}>
@@ -95,89 +107,88 @@ export default function App() {
           <TicketStats stats={stats} />
         </section>
 
-        {/* Controls */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '20px', alignItems: 'center' }}>
-          <input
-            data-testid="search-input"
-            type="text"
-            placeholder="Search tickets..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            style={{ ...selectStyle, minWidth: '200px', flex: 1 }}
+        {/* Detail view */}
+        {selectedTicket ? (
+          <TicketDetail
+            ticket={selectedTicket}
+            comments={selectedComments}
+            onAddComment={handleAddComment}
+            onClose={() => setSelectedTicketId(null)}
           />
-          <select data-testid="filter-status" value={filterStatus} onChange={e => setFilterStatus(e.target.value as Status | '')} style={selectStyle}>
-            <option value="">All statuses</option>
-            <option value="open">Open</option>
-            <option value="in_progress">In Progress</option>
-            <option value="resolved">Resolved</option>
-            <option value="closed">Closed</option>
-          </select>
-          <select data-testid="filter-priority" value={filterPriority} onChange={e => setFilterPriority(e.target.value as Priority | '')} style={selectStyle}>
-            <option value="">All priorities</option>
-            <option value="critical">Critical</option>
-            <option value="high">High</option>
-            <option value="medium">Medium</option>
-            <option value="low">Low</option>
-          </select>
-          <select data-testid="sort-by" value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)} style={selectStyle}>
-            <option value="createdAt">Sort: Newest</option>
-            <option value="priority">Sort: Priority</option>
-            <option value="status">Sort: Status</option>
-          </select>
-          <button
-            data-testid="new-ticket-button"
-            onClick={() => setShowForm(true)}
-            style={{
-              padding: '6px 16px',
-              background: '#2563eb',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontWeight: 600,
-              fontSize: '14px',
-            }}
-          >
-            + New Ticket
-          </button>
-        </div>
-
-        {/* Form */}
-        {showForm && (
-          <div style={{
-            background: '#fff',
-            border: '1px solid #e5e7eb',
-            borderRadius: '10px',
-            padding: '20px',
-            marginBottom: '20px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-          }}>
-            <h2 style={{ margin: '0 0 16px', fontSize: '16px', fontWeight: 700 }}>Create New Ticket</h2>
-            <TicketForm onSubmit={handleCreate} onCancel={() => setShowForm(false)} />
-          </div>
-        )}
-
-        {/* Ticket list */}
-        <div data-testid="ticket-list" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {displayedTickets.length === 0 ? (
-            <div data-testid="empty-state" style={{ textAlign: 'center', padding: '48px', color: '#9ca3af' }}>
-              No tickets found.
-            </div>
-          ) : (
-            displayedTickets.map(ticket => (
-              <TicketCard
-                key={ticket.id}
-                ticket={ticket}
-                onStatusChange={handleStatusChange}
-                onDelete={handleDelete}
+        ) : (
+          <>
+            {/* Controls */}
+            <div style={{ marginBottom: '20px' }}>
+              <FilterPanel
+                filterStatus={filterStatus}
+                setFilterStatus={setFilterStatus}
+                filterPriority={filterPriority}
+                setFilterPriority={setFilterPriority}
+                search={search}
+                setSearch={setSearch}
+                sortBy={sortBy}
+                setSortBy={setSortBy}
               />
-            ))
-          )}
-        </div>
+            </div>
 
-        <div style={{ marginTop: '16px', fontSize: '13px', color: '#9ca3af', textAlign: 'right' }}>
-          Showing {displayedTickets.length} of {tickets.length} tickets
-        </div>
+            <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'flex-end' }}>
+              <button
+                data-testid="new-ticket-button"
+                onClick={() => setShowForm(true)}
+                style={{
+                  padding: '6px 16px',
+                  background: '#2563eb',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  fontSize: '14px',
+                }}
+              >
+                + New Ticket
+              </button>
+            </div>
+
+            {/* Form */}
+            {showForm && (
+              <div style={{
+                background: '#fff',
+                border: '1px solid #e5e7eb',
+                borderRadius: '10px',
+                padding: '20px',
+                marginBottom: '20px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+              }}>
+                <h2 style={{ margin: '0 0 16px', fontSize: '16px', fontWeight: 700 }}>Create New Ticket</h2>
+                <TicketForm onSubmit={handleCreate} onCancel={() => setShowForm(false)} />
+              </div>
+            )}
+
+            {/* Ticket list */}
+            <div data-testid="ticket-list" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {displayedTickets.length === 0 ? (
+                <div data-testid="empty-state" style={{ textAlign: 'center', padding: '48px', color: '#9ca3af' }}>
+                  No tickets found.
+                </div>
+              ) : (
+                displayedTickets.map(ticket => (
+                  <TicketCard
+                    key={ticket.id}
+                    ticket={ticket}
+                    onStatusChange={handleStatusChange}
+                    onDelete={handleDelete}
+                    onSelect={setSelectedTicketId}
+                  />
+                ))
+              )}
+            </div>
+
+            <div style={{ marginTop: '16px', fontSize: '13px', color: '#9ca3af', textAlign: 'right' }}>
+              Showing {displayedTickets.length} of {tickets.length} tickets
+            </div>
+          </>
+        )}
       </main>
     </div>
   );

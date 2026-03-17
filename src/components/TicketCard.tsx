@@ -5,6 +5,7 @@ interface TicketCardProps {
   ticket: Ticket;
   onStatusChange: (id: string, status: Status) => void;
   onDelete: (id: string) => void;
+  onSelect?: (id: string) => void;
 }
 
 const priorityColors: Record<string, string> = {
@@ -21,7 +22,7 @@ const statusColors: Record<string, string> = {
   closed: '#6b7280',
 };
 
-export function TicketCard({ ticket, onStatusChange, onDelete }: TicketCardProps) {
+export function TicketCard({ ticket, onStatusChange, onDelete, onSelect }: TicketCardProps) {
   const nextStatus: Record<string, Status> = {
     open: 'in_progress',
     in_progress: 'resolved',
@@ -75,7 +76,12 @@ export function TicketCard({ ticket, onStatusChange, onDelete }: TicketCardProps
 
       <h3
         data-testid="ticket-title"
-        style={{ margin: '0 0 6px', fontSize: '15px', fontWeight: 600, color: '#111827' }}
+        onClick={() => onSelect?.(ticket.id)}
+        style={{
+          margin: '0 0 6px', fontSize: '15px', fontWeight: 600, color: '#111827',
+          cursor: onSelect ? 'pointer' : 'default',
+          textDecoration: onSelect ? 'underline' : 'none',
+        }}
       >
         {ticket.title}
       </h3>
