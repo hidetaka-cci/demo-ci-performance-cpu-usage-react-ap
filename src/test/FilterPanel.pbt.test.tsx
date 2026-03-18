@@ -174,6 +174,10 @@ describe('FilterPanel - callback properties', () => {
         // 空文字は React が同値と判断してイベントを発火しないケースがあるため 1 文字以上
         fc.string({ minLength: 1, maxLength: 50 }),
         (state, newValue) => {
+          // React's controlled input doesn't fire onChange if the value doesn't actually change
+          // Skip this test case if the current search is the same as newValue
+          fc.pre(state.search !== newValue);
+
           const setSearch = vi.fn();
           const { unmount, container } = render(
             <FilterPanel
@@ -188,8 +192,10 @@ describe('FilterPanel - callback properties', () => {
             />
           );
           try {
-            const input = within(container).getByTestId('search-input');
+            const input = within(container).getByTestId('search-input') as HTMLInputElement;
+
             fireEvent.change(input, { target: { value: newValue } });
+            // onChange should be called when value actually changes
             expect(setSearch).toHaveBeenCalledWith(newValue);
           } finally {
             unmount();
