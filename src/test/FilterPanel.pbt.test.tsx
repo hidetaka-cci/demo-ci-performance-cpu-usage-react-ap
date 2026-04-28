@@ -174,6 +174,8 @@ describe('FilterPanel - callback properties', () => {
         // 空文字は React が同値と判断してイベントを発火しないケースがあるため 1 文字以上
         fc.string({ minLength: 1, maxLength: 50 }),
         (state, newValue) => {
+          // React は同じ値への変更を最適化するため、新しい値が現在の値と異なることを前提とする
+          fc.pre(state.search !== newValue);
           const setSearch = vi.fn();
           const { unmount, container } = render(
             <FilterPanel
