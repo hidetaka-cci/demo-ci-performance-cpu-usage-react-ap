@@ -164,14 +164,14 @@ jobs:
 workflows:
   # [A] デフォルト: Medium のみ実行 (通常の CI)
   default:
-  #  jobs:
-  #    - test-medium
+    jobs:
+      - test-medium
 
   # [B] パフォーマンス比較デモ: 全バリエーションを並列実行
   #     performance-demo ブランチへの push で起動
-  #performance-comparison:
-    #when:
-    #  equal: [performance-demo, << pipeline.git.branch >>]
+  performance-comparison:
+    when:
+      equal: [performance-demo, << pipeline.git.branch >>]
     jobs:
       - test-small
       - test-medium
@@ -179,6 +179,9 @@ workflows:
       - test-medium-parallel
 
   # [C] Smarter Testing デモ: test-medium-parallel の Smarter Testing 版
+  #     smarter-testing ブランチへの push で起動
   smarter-testing-parallel:
+    when:
+      equal: [smarter-testing, << pipeline.git.branch >>]
     jobs:
       - test-medium-parallel-smarter
