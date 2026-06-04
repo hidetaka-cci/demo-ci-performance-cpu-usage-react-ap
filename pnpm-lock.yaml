@@ -15,6 +15,9 @@ importers:
         specifier: ^19.2.0
         version: 19.2.4(react@19.2.4)
     devDependencies:
+      '@circleci/vitest-circleci-coverage':
+        specifier: jsr:^0.1.3
+        version: '@jsr/circleci__vitest-circleci-coverage@0.1.3(@types/node@24.12.0)(jsdom@29.0.0)(vite@7.3.1(@types/node@24.12.0))'
       '@eslint/js':
         specifier: ^9.39.1
         version: 9.39.4
@@ -454,6 +457,12 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
+
+  '@jsr/circleci__v8-coverage-collector@0.1.2':
+    resolution: {integrity: sha512-G8mWJYsEP1QG2+fmbsu7CA6uiHzo7OH2Zx/VIMZD6SKD372VuYOfvEBfzY4Am9+cVudZMAfxjudN/69f+YaMDw==, tarball: https://npm.jsr.io/~/11/@jsr/circleci__v8-coverage-collector/0.1.2.tgz}
+
+  '@jsr/circleci__vitest-circleci-coverage@0.1.3':
+    resolution: {integrity: sha512-hN9I3m5wf47phdNHdzzzTVfw+EML8blc5Ktz5GsS4JV4nQQIpwDch2zx3q5Cxcx+t17NBi6+/MkhOQ4k0Qy9aw==, tarball: https://npm.jsr.io/~/11/@jsr/circleci__vitest-circleci-coverage/0.1.3.tgz}
 
   '@rolldown/pluginutils@1.0.0-rc.3':
     resolution: {integrity: sha512-eybk3TjzzzV97Dlj5c+XrBFW57eTNhzod66y9HrBlzJ6NsCrWCp/2kaPS3K9wJmurBC0Tdw4yPjXKZqlznim3Q==}
@@ -1875,6 +1884,25 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
+
+  '@jsr/circleci__v8-coverage-collector@0.1.2': {}
+
+  '@jsr/circleci__vitest-circleci-coverage@0.1.3(@types/node@24.12.0)(jsdom@29.0.0)(vite@7.3.1(@types/node@24.12.0))':
+    dependencies:
+      '@jsr/circleci__v8-coverage-collector': 0.1.2
+      vitest: 4.1.0(@types/node@24.12.0)(jsdom@29.0.0)(vite@7.3.1(@types/node@24.12.0))
+    transitivePeerDependencies:
+      - '@edge-runtime/vm'
+      - '@opentelemetry/api'
+      - '@types/node'
+      - '@vitest/browser-playwright'
+      - '@vitest/browser-preview'
+      - '@vitest/browser-webdriverio'
+      - '@vitest/ui'
+      - happy-dom
+      - jsdom
+      - msw
+      - vite
 
   '@rolldown/pluginutils@1.0.0-rc.3': {}
 
