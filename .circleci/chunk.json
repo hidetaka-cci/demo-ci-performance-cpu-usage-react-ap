@@ -1,5 +1,5 @@
 {
-  "requiredEnv": ["LINEAR_API_KEY", "CIRCLECI_TOKEN"],
+  "requiredEnv": ["CIRCLECI_TOKEN"],
   "mcpServers": {
     "circleci-mcp-server": {
       "command": "npx",
