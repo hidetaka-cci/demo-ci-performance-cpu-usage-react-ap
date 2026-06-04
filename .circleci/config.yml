@@ -139,6 +139,27 @@ jobs:
           path: test-results
           destination: test-results
 
+  # ── [5] Medium + parallelism=4 + Smarter Testing ─────────────
+  # test-medium-parallel と同等のリソース/並列度で、
+  # CircleCI Smarter Testing (testsuite) を使用:
+  #   - dynamic test splitting
+  #   - test impact analysis
+  #   - auto rerun failed tests
+  test-medium-parallel-smarter:
+    executor: node-medium
+    parallelism: 4
+    steps:
+      - checkout
+      - install-deps
+      - run:
+          name: Run PBT (medium / parallelism=4) with Smarter Testing
+          command: circleci run testsuite "pbt ci tests"
+      - store_test_results:
+          path: test-reports
+      - store_artifacts:
+          path: test-reports
+          destination: test-reports
+
 # ── Workflows ────────────────────────────────────────────────
 workflows:
   # [A] デフォルト: Medium のみ実行 (通常の CI)
@@ -156,3 +177,11 @@ workflows:
       - test-medium
       - test-large
       - test-medium-parallel
+
+  # [C] Smarter Testing デモ: test-medium-parallel の Smarter Testing 版
+  #     smarter-testing-demo ブランチへの push で起動
+  smarter-testing-parallel:
+    when:
+      equal: [smarter-testing-demo, << pipeline.git.branch >>]
+    jobs:
+      - test-medium-parallel-smarter

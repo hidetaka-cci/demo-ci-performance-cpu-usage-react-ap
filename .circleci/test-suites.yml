@@ -1,0 +1,23 @@
+# CircleCI Smarter Testing 設定
+# test-medium-parallel-smarter ジョブで使用
+#
+# 有効な機能:
+#   - dynamic-test-splitting: 並列ノード間で動的にテストを分割
+#   - test-impact-analysis: 変更されたコードに影響するテストのみ実行
+#   - max-auto-rerun: 失敗したテストの自動リトライ
+---
+name: pbt ci tests
+discover: pnpm exec vitest list --filesOnly
+run: pnpm exec vitest run --reporter=verbose --reporter=junit --outputFile.junit="<< outputs.junit >>" --bail 0 << test.atoms >>
+analysis: CIRCLECI_COVERAGE=<< outputs.circleci-coverage >> pnpm exec vitest run --silent --bail 0 << test.atoms >>
+outputs:
+  junit: test-reports/junit.xml
+options:
+  dynamic-test-splitting: true
+  test-impact-analysis: true
+  max-auto-rerun: 2
+  full-test-run-paths:
+    - package.json
+    - pnpm-lock.yaml
+    - vite.config.ts
+    - .circleci/*.yml

@@ -1,6 +1,8 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
+const useCircleCiCoverage = Boolean(process.env.CIRCLECI_COVERAGE)
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
@@ -10,10 +12,18 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.ts'],
     // App 統合テストは numRuns=500 × full render で重いため余裕を持たせる
     testTimeout: 60000,
-    // CI では junit レポーターで XML を出力、ローカルでは verbose のみ
-    reporters: process.env.CI
-      ? [['verbose'], ['junit', { outputFile: 'test-results/junit.xml', suiteName: 'PBT Suite' }]]
-      : ['verbose'],
+    // Smarter Testing の analysis フェーズ (CIRCLECI_COVERAGE 時のみ)
+    ...(useCircleCiCoverage
+      ? {
+          runner: '@circleci/vitest-circleci-coverage/runner',
+          reporters: ['@circleci/vitest-circleci-coverage/reporter'],
+        }
+      : {
+          // CI では junit レポーターで XML を出力、ローカルでは verbose のみ
+          reporters: process.env.CI
+            ? [['verbose'], ['junit', { outputFile: 'test-results/junit.xml', suiteName: 'PBT Suite' }]]
+            : ['verbose'],
+        }),
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
