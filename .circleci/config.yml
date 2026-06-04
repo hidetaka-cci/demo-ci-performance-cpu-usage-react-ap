@@ -179,9 +179,6 @@ workflows:
       - test-medium-parallel
 
   # [C] Smarter Testing デモ: test-medium-parallel の Smarter Testing 版
-  #     smarter-testing-demo ブランチへの push で起動
   smarter-testing-parallel:
-    when:
-      equal: [smarter-testing-demo, << pipeline.git.branch >>]
     jobs:
       - test-medium-parallel-smarter
