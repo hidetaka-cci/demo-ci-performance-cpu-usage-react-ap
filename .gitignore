@@ -25,3 +25,7 @@ dist-ssr
 test-results/
 test-reports/
 .circleci/*-impact.json
+
+# chunk active sidecar tracking
+.chunk/sidecar.json
+.chunk/sidecar.*.json
