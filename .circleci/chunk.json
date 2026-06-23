@@ -1,5 +1,5 @@
 {
-  "requiredEnv": ["CIRCLECI_TOKEN"],
+  "requiredEnv": ["CIRCLECI_TOKEN", "AWS_ACCOUNT_ID", "AWS_ROLE_ARN"],
   "mcpServers": {
     "circleci-mcp-server": {
       "command": "npx",
@@ -7,6 +7,16 @@
       "env": {
         "CIRCLECI_TOKEN": "${CIRCLECI_TOKEN}",
         "CIRCLECI_BASE_URL": "https://circleci.com"
+      }
+    },
+    "awslabs.aws-api-mcp-server": {
+      "command": "uvx",
+      "args": ["awslabs.aws-api-mcp-server@latest"],
+      "env": {
+        "AWS_REGION": "ap-northeast-1",
+        "READ_OPERATIONS_ONLY": "true",
+        "AWS_ACCOUNT_ID": "${AWS_ACCOUNT_ID}",
+        "AWS_ROLE_ARN": "${AWS_ROLE_ARN}"
       }
     }
   }
