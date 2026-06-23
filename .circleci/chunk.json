@@ -1,5 +1,5 @@
 {
-  "requiredEnv": ["CIRCLECI_TOKEN", "AWS_ACCOUNT_ID", "AWS_ROLE_ARN"],
+  "requiredEnv": ["CIRCLECI_TOKEN", "AWS_ACCOUNT_ID", "AWS_ROLE_ARN", "CIRCLE_OIDC_TOKEN"],
   "mcpServers": {
     "circleci-mcp-server": {
       "command": "npx",
@@ -10,13 +10,17 @@
       }
     },
     "awslabs.aws-api-mcp-server": {
-      "command": "uvx",
-      "args": ["awslabs.aws-api-mcp-server@latest"],
+      "command": "bash",
+      "args": [
+        "-c",
+        "pip install -q uv 2>/dev/null || true; OIDC_FILE=$(mktemp /tmp/oidc-XXXXXX.token); printf '%s' \"$CIRCLE_OIDC_TOKEN\" > \"$OIDC_FILE\"; export AWS_WEB_IDENTITY_TOKEN_FILE=\"$OIDC_FILE\"; uvx awslabs.aws-api-mcp-server@latest; rm -f \"$OIDC_FILE\""
+      ],
       "env": {
+        "CIRCLE_OIDC_TOKEN": "${CIRCLE_OIDC_TOKEN}",
+        "AWS_ROLE_ARN": "${AWS_ROLE_ARN}",
         "AWS_REGION": "ap-northeast-1",
-        "READ_OPERATIONS_ONLY": "true",
         "AWS_ACCOUNT_ID": "${AWS_ACCOUNT_ID}",
-        "AWS_ROLE_ARN": "${AWS_ROLE_ARN}"
+        "READ_OPERATIONS_ONLY": "true"
       }
     }
   }
