@@ -1,14 +1,24 @@
 version: 2.1
 
+orbs:
+  aws-cli: circleci/aws-cli@5.4.1
+
 workflows:
   cci-agent-setup:
     jobs:
-      - cci-agent-setup
+      # circleci-agents context is required for CIRCLE_OIDC_TOKEN generation.
+      # AWS_ROLE_ARN and AWS_ACCOUNT_ID should be set as project env vars or
+      # in the Chunk environment context (chunk-<environment-name>).
+      - cci-agent-setup:
+          context:
+            - circleci-agents
 
 jobs:
   cci-agent-setup:
     docker:
       - image: cimg/node:22.14
+    environment:
+      AWS_REGION: ap-northeast-1
     steps:
       - checkout
       - run:
@@ -16,6 +26,24 @@ jobs:
           command: |
             curl -LsSf https://astral.sh/uv/0.11.23/install.sh | sh
             echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$BASH_ENV"
+      - run:
+          name: Validate AWS OIDC prerequisites
+          command: |
+            if [ -z "${AWS_ROLE_ARN:-}" ]; then
+              echo "AWS_ROLE_ARN is not set. Configure it in project env vars or the Chunk environment context."
+              exit 1
+            fi
+            if [ -z "${CIRCLE_OIDC_TOKEN:-}" ]; then
+              echo "CIRCLE_OIDC_TOKEN is not set. Ensure the job uses a CircleCI context (e.g. circleci-agents)."
+              exit 1
+            fi
+      - aws-cli/setup:
+          role_arn: ${AWS_ROLE_ARN}
+          region: ${AWS_REGION}
+          role_session_name: chunk-agent
+      - run:
+          name: Verify AWS CLI authentication
+          command: aws sts get-caller-identity
       - run:
           name: Install Node dependencies
           command: |
