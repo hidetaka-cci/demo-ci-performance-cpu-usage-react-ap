@@ -23,6 +23,11 @@ jobs:
             curl -LsSf https://astral.sh/uv/0.11.23/install.sh | sh
             echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$BASH_ENV"
       - run:
+          name: Test AWS CLI
+          command: |
+            aws sts get-caller-identity
+            aws --version
+      - run:
           name: Install Node dependencies
           command: |
             corepack enable
