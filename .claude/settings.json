@@ -4,7 +4,8 @@
   "permissions": {
     "allow": [
       "Bash(chunk:*)",
-      "mcp__awslabs_aws-api-mcp-server__call_aws"
+      "mcp__awslabs_aws-api-mcp-server__call_aws",
+      "Bash(aws *)"
     ]
   },
   "hooks": {
