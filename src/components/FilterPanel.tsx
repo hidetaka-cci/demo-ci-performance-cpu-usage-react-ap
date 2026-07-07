@@ -37,7 +37,7 @@ export function FilterPanel({
       <input
         data-testid="search-input"
         type="text"
-        placeholder="Search tickets..."
+        placeholder="Search by title or description..."
         value={search}
         onChange={e => setSearch(e.target.value)}
         style={{ ...selectStyle, minWidth: '200px', flex: 1 }}
