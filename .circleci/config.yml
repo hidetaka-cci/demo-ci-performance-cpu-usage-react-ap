@@ -153,7 +153,7 @@ jobs:
       - install-deps
       - run:
           name: Run PBT (medium / parallelism=4) with Smarter Testing
-          command: circleci run testsuite "pbt ci tests"
+          command: circleci testsuite run "pbt ci tests"
       - store_test_results:
           path: test-reports
       - store_artifacts:
